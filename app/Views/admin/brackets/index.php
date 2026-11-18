@@ -38,6 +38,12 @@ $finished    = count(array_filter($overview, static fn ($r) => ($r['bracket']['s
             <span><strong class="text-slate-900"><?= $finished ?></strong> encerradas</span>
             <span><strong class="text-slate-900"><?= $pending ?></strong> prontas para sortear</span>
         </div>
+        <?php if ($withBracket > 0): ?>
+            <a href="<?= $base ?>/print" target="_blank"
+                class="border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold py-2 px-5 rounded-lg transition text-sm">
+                Imprimir todas as chaves
+            </a>
+        <?php endif; ?>
         <?php if ($canEdit && $pending > 0): ?>
             <button type="button" id="generate-all"
                 class="bg-red-700 hover:bg-red-800 text-white font-semibold py-2 px-5 rounded-lg transition text-sm">

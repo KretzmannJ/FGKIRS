@@ -210,6 +210,7 @@ $router->add('POST', '/fgkirs-admin/championships/{id}/categories/{categoryId}/s
 // Chaves, resultados e ranking
 $router->add('GET', '/fgkirs-admin/championships/{id}/brackets', 'Admin\BracketController@index');
 $router->add('POST', '/fgkirs-admin/championships/{id}/brackets/generate-all', 'Admin\BracketController@generateAll');
+$router->add('GET', '/fgkirs-admin/championships/{id}/brackets/print', 'Admin\BracketController@printAll');
 $router->add('GET', '/fgkirs-admin/championships/{id}/brackets/{categoryId}', 'Admin\BracketController@show');
 $router->add('GET', '/fgkirs-admin/championships/{id}/brackets/{categoryId}/data', 'Admin\BracketController@data');
 $router->add('POST', '/fgkirs-admin/championships/{id}/brackets/{categoryId}/generate', 'Admin\BracketController@generate');

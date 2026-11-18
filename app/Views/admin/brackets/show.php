@@ -43,6 +43,7 @@ $categoryId     = (int) $bracketState['category']['id'];
     .round:not(:last-child) .match-wrap:nth-child(odd)::before { content: ""; position: absolute; right: -1.25rem; top: 50%; height: 50%; border-right: 2px solid #cbd5e1; }
     .round:not(:last-child) .match-wrap:nth-child(even)::before { content: ""; position: absolute; right: -1.25rem; bottom: 50%; height: 50%; border-right: 2px solid #cbd5e1; }
     .round:not(:first-child) .match::before { content: ""; position: absolute; left: -1.25rem; top: 50%; width: 1.25rem; border-top: 2px solid #cbd5e1; }
+    @page { size: A4 landscape; margin: 8mm; }
     @media print {
         #sidebar, .no-print, nav { display: none !important; }
         main { padding: 0 !important; overflow: visible !important; }

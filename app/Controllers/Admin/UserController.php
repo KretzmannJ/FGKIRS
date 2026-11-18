@@ -75,7 +75,7 @@ class UserController extends Controller
 
         $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
-        $role = $_POST['role'] ?? '';
+        $role = $this->resolveRole($_POST['role'] ?? '', null);
         $dojoId = empty($_POST['dojo_id']) ? null : (int) $_POST['dojo_id'];
         $password = $_POST['password'] ?? '';
 
@@ -215,7 +215,7 @@ class UserController extends Controller
             exit;
         }
 
-        $sql = "SELECT photo FROM users WHERE id = :id";
+        $sql = "SELECT photo, role FROM users WHERE id = :id";
         if (Auth::isSensei()) {
             $sql .= " AND dojo_id = :dojo_id";
             $params = ['id' => $id, 'dojo_id' => Auth::dojoId()];
@@ -231,7 +231,7 @@ class UserController extends Controller
 
         $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
-        $role = $_POST['role'] ?? '';
+        $role = $this->resolveRole($_POST['role'] ?? '', $user['role']);
         $dojoId = empty($_POST['dojo_id']) ? null : (int) $_POST['dojo_id'];
         $password = $_POST['password'] ?? '';
 
@@ -446,6 +446,20 @@ class UserController extends Controller
         $data['certificates']     = $athlete ? (new CertificateRepository())->forAthlete((int) $athlete['id']) : [];
 
         $this->json($data);
+    }
+
+    /** Sensei nunca cria/promove admin ou sensei; quem já é um deles mantém o perfil. */
+    private function resolveRole(string $requested, ?string $currentRole): string
+    {
+        if (Auth::isAdmin()) {
+            return $requested;
+        }
+
+        if (in_array($currentRole, ['admin', 'sensei'], true)) {
+            return $currentRole;
+        }
+
+        return in_array($requested, self::ATHLETE_ROLES, true) ? $requested : '';
     }
 
     private function saveAthleteProfile(int $userId): void

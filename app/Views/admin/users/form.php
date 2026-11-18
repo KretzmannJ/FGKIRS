@@ -11,6 +11,9 @@ if ($currentRole === '' && !empty($athleteProfile)) {
     $currentRole = 'aluno';
 }
 $isAthlete = in_array($currentRole, ['aluno', 'aluno-colaborador']);
+$isSensei  = $currentRole === 'sensei';
+// Sensei não promove ninguém a sensei/admin nem rebaixa um deles: o perfil fica travado.
+$roleLocked = !Auth::isAdmin() && in_array($currentRole, ['admin', 'sensei'], true);
 
 require_once __DIR__ . '/../layout/header.php';
 
@@ -113,10 +116,13 @@ foreach ($graduations ?? [] as $g) {
 
         <div class="mb-4">
             <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Perfil *</label>
-            <select id="role" name="role" required onchange="toggleAthleteSection()"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-700 focus:border-transparent bg-white">
+            <?php if ($roleLocked): ?>
+            <input type="hidden" name="role" value="<?= htmlspecialchars($currentRole) ?>">
+            <?php endif; ?>
+            <select id="role" <?= $roleLocked ? 'disabled' : 'name="role" required' ?> onchange="toggleAthleteSection()"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-700 focus:border-transparent bg-white <?= $roleLocked ? 'bg-gray-100 text-gray-500' : '' ?>">
                 <option value="">Selecione...</option>
-                <?php if (Auth::isAdmin()): ?>
+                <?php if (Auth::isAdmin() || $roleLocked): ?>
                 <option value="admin"  <?= $currentRole === 'admin'  ? 'selected' : '' ?>>Administrador</option>
                 <option value="sensei" <?= $currentRole === 'sensei' ? 'selected' : '' ?>>Sensei</option>
                 <?php endif; ?>
@@ -125,27 +131,27 @@ foreach ($graduations ?? [] as $g) {
             </select>
         </div>
 
-        <!-- ── Perfil Sensei ──────────────────────────────────────────── -->
-        <div id="senseiSection" class="hidden mb-4 p-4 bg-slate-50 border border-slate-100 rounded-lg">
-            <label class="block text-sm font-medium text-slate-700 mb-2">Registro CBKI (Exclusivo Sensei)</label>
-            <input type="text" id="cbki_registration" name="cbki_registration"
-                   value="<?= htmlspecialchars($ap['cbki_registration'] ?? '') ?>"
-                   placeholder="Ex: CBKI-00123"
-                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-700 focus:border-transparent bg-white">
-        </div>
-
         <!-- ── Perfil de Atleta ──────────────────────────────────────────── -->
-        <div id="athleteSection" class="<?= $isAthlete ? '' : 'hidden' ?>">
+        <div id="athleteSection" class="<?= $isAthlete || $isSensei ? '' : 'hidden' ?>">
 
             <div class="border-t border-gray-100 pt-6 mb-4 flex items-center justify-between">
-                <p class="text-xs font-bold uppercase tracking-widest text-slate-400">Perfil de Atleta</p>
+                <p id="profileTitle" class="text-xs font-bold uppercase tracking-widest text-slate-400"><?= $isSensei ? 'Perfil de Sensei' : 'Perfil de Atleta' ?></p>
                 <?php if ($isEdit && $athleteProfile === null && $isAthlete): ?>
                 <span class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">Perfil ainda não preenchido</span>
                 <?php endif; ?>
             </div>
 
+            <!-- Registro CBKI (sensei) -->
+            <div class="sensei-only mb-4 <?= $isSensei ? '' : 'hidden' ?>">
+                <label for="cbki_registration" class="block text-sm font-medium text-gray-700 mb-2">Registro CBKI</label>
+                <input type="text" id="cbki_registration" name="cbki_registration"
+                       value="<?= htmlspecialchars($ap['cbki_registration'] ?? '') ?>"
+                       placeholder="Ex: CBKI-00123"
+                       class="w-full sm:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-700 focus:border-transparent">
+            </div>
+
             <!-- Registration numbers -->
-            <div class="mb-4">
+            <div class="athlete-only mb-4 <?= $isSensei ? 'hidden' : '' ?>">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Registro FGKIRS
                     <span class="font-normal text-gray-400 text-xs">(preenchido automaticamente)</span>
@@ -177,7 +183,7 @@ foreach ($graduations ?? [] as $g) {
             </div>
 
             <!-- Para-karatê -->
-            <div class="mb-4">
+            <div class="athlete-only mb-4 <?= $isSensei ? 'hidden' : '' ?>">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Para-karatê</label>
                 <div class="flex items-center gap-6">
                     <label class="inline-flex items-center gap-2 cursor-pointer">
@@ -214,7 +220,7 @@ foreach ($graduations ?? [] as $g) {
             </div>
 
             <!-- Weight + Height -->
-            <div class="grid sm:grid-cols-2 gap-4 mb-4">
+            <div class="athlete-only grid sm:grid-cols-2 gap-4 mb-4 <?= $isSensei ? 'hidden' : '' ?>">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Peso (kg)</label>
                     <input type="number" name="athlete_weight" step="0.1" min="20" max="300"
@@ -248,7 +254,7 @@ foreach ($graduations ?? [] as $g) {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Graduação Atual</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Graduação Atual <span class="sensei-only font-normal text-gray-400 text-xs <?= $isSensei ? '' : 'hidden' ?>">(faixa / dan)</span></label>
 
                     <!-- Hidden native select — submits the value -->
                     <select id="athleteGraduation" name="athlete_graduation_id" class="hidden">
@@ -289,7 +295,7 @@ foreach ($graduations ?? [] as $g) {
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Histórico / Observações</label>
                 <textarea name="athlete_notes" rows="4"
-                          placeholder="Competições, histórico, observações médicas, etc."
+                          placeholder="<?= $isSensei ? 'Formação, tempo de prática, cursos e títulos.' : 'Competições, histórico, observações médicas, etc.' ?>"
                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-700 focus:border-transparent"><?= htmlspecialchars($ap['notes'] ?? '') ?></textarea>
             </div>
 
@@ -349,9 +355,15 @@ foreach ($graduations ?? [] as $g) {
     /* ── Athlete / Sensei section toggle ──────────────────────── */
     function toggleAthleteSection() {
         const role = document.getElementById('role').value;
-        document.getElementById('athleteSection').classList.toggle('hidden', !ATHLETE_ROLES.includes(role));
-        const ss = document.getElementById('senseiSection');
-        if (ss) ss.classList.toggle('hidden', role !== 'sensei');
+        const isSenseiRole = role === 'sensei';
+        document.getElementById('athleteSection').classList.toggle('hidden', !ATHLETE_ROLES.includes(role) && !isSenseiRole);
+        document.getElementById('profileTitle').textContent = isSenseiRole ? 'Perfil de Sensei' : 'Perfil de Atleta';
+        // Campo oculto não pode ser enviado: o nº FGKIRS pré-preenchido gastaria uma matrícula de atleta.
+        document.querySelectorAll('.athlete-only, .sensei-only').forEach(function (el) {
+            const hide = el.classList.contains('athlete-only') ? isSenseiRole : !isSenseiRole;
+            el.classList.toggle('hidden', hide);
+            el.querySelectorAll('input, select, textarea').forEach(function (f) { f.disabled = hide; });
+        });
 
         const isAluno = role === 'aluno';
         document.getElementById('pwdRegenWrap').classList.toggle('hidden', !isAluno || IS_EDIT);

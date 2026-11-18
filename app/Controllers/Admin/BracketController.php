@@ -45,6 +45,25 @@ class BracketController extends Controller
         ]);
     }
 
+    /** Printable page with every drawn bracket of the event, one landscape page per category. */
+    public function printAll(int $championshipId): void
+    {
+        $championship = $this->championship($championshipId);
+
+        if (!$this->repository->tablesExist()) {
+            $this->redirect("/fgkirs-admin/championships/$championshipId/brackets");
+        }
+
+        $sheets = [];
+        foreach ($this->service->overview($championshipId) as $row) {
+            if ($row['bracket'] !== null) {
+                $sheets[] = $this->service->state($championship, (int) $row['id']);
+            }
+        }
+
+        $this->view('admin/brackets/print_all', ['championship' => $championship, 'sheets' => $sheets]);
+    }
+
     /** A chave de uma categoria (a tela busca os dados em /data e reage por JSON). */
     public function show(int $championshipId, int $categoryId): void
     {
