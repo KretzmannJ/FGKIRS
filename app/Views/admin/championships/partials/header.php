@@ -10,7 +10,8 @@ use Models\Championship;
 $eventLevel = $eventLevel ?? false; // abas do evento inteiro (chaves, resultados): sem seletor de dojo
 $state      = Championship::registrationState($championship);
 $stateLabel = Championship::REGISTRATION_STATES[$state];
-$dojoQuery  = (Auth::isAdmin() && !empty($dojoId)) ? '?dojo_id=' . (int) $dojoId : '';
+$allDojos   = !empty($allDojos) && Auth::isAdmin();
+$dojoQuery  = $allDojos ? '?dojo_id=all' : ((Auth::isAdmin() && !empty($dojoId)) ? '?dojo_id=' . (int) $dojoId : '');
 
 $stateStyle = match ($state) {
     'open'      => 'bg-green-100 text-green-800 border-green-200',
@@ -71,6 +72,9 @@ $tabs = [
             <select name="dojo_id" id="dojo_id" onchange="this.form.submit()"
                 class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-700 focus:border-transparent">
                 <option value="">— Selecione um dojo —</option>
+                <?php if ($activeTab === 'summary'): ?>
+                    <option value="all" <?= $allDojos ? 'selected' : '' ?>>Todos os dojos</option>
+                <?php endif; ?>
                 <?php foreach ($dojos as $option): ?>
                     <option value="<?= (int) $option['id'] ?>" <?= (int) $option['id'] === (int) $dojoId ? 'selected' : '' ?>>
                         <?= htmlspecialchars($option['name']) ?><?= $option['city'] ? ' – ' . htmlspecialchars($option['city']) : '' ?>
@@ -108,7 +112,7 @@ $tabs = [
 
 <?php require __DIR__ . '/flash.php'; ?>
 
-<?php if (empty($dojoId) && !$eventLevel): ?>
+<?php if (empty($dojoId) && !$allDojos && !$eventLevel): ?>
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-10 text-center">
         <p class="text-slate-500">Selecione um dojo acima para ver e gerenciar as inscrições.</p>
     </div>

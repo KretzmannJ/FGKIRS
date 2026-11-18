@@ -75,9 +75,23 @@ class RegistrationController extends Controller
     public function summary(int $championshipId): void
     {
         [$championship, $dojoId] = $this->context($championshipId);
+        $repo = new RegistrationRepository();
+
+        // "Todos os dojos": admin only, enforced here (a sensei's dojo always comes from the session)
+        if ($this->wantsAllDojos()) {
+            $this->render('summary', $championship, null, 'summary', [
+                'allDojos'      => true,
+                'registrations' => array_values(array_filter(
+                    $repo->forChampionship((int) $championship['id']),
+                    static fn (array $r) => $r['status'] !== 'cancelled'
+                )),
+                'teams'         => (new EventTeamRepository())->forChampionship((int) $championship['id']),
+            ]);
+            return;
+        }
 
         $this->render('summary', $championship, $dojoId, 'summary', [
-            'registrations' => $dojoId ? (new RegistrationRepository())->activeForDojo((int) $championship['id'], $dojoId) : [],
+            'registrations' => $dojoId ? $repo->activeForDojo((int) $championship['id'], $dojoId) : [],
             'teams'         => $dojoId ? (new EventTeamRepository())->forChampionship((int) $championship['id'], $dojoId) : [],
         ]);
     }
@@ -398,6 +412,7 @@ class RegistrationController extends Controller
             'dojoId'       => $dojoId,
             'dojo'         => $dojoId ? $this->dojo($dojoId) : null,
             'dojos'        => Auth::isAdmin() ? $this->dojos() : [],
+            'allDojos'     => $data['allDojos'] ?? false,
             'activeTab'    => $tab,
             'canWrite'     => Auth::isAdmin() || Championship::isRegistrationOpen($championship),
             'pageTitle'    => $championship['title'],
@@ -408,7 +423,17 @@ class RegistrationController extends Controller
     {
         $url = "/fgkirs-admin/championships/$championshipId/$tab";
 
+        if ($this->wantsAllDojos()) {
+            return "$url?dojo_id=all";
+        }
+
         return $dojoId && Auth::isAdmin() ? "$url?dojo_id=$dojoId" : $url;
+    }
+
+    /** True only for an admin asking for every dojo; for a sensei the parameter is ignored. */
+    private function wantsAllDojos(): bool
+    {
+        return Auth::isAdmin() && ($_REQUEST['dojo_id'] ?? '') === 'all';
     }
 
     private function dojo(int $dojoId): ?array

@@ -43,11 +43,13 @@ $categoryId     = (int) $bracketState['category']['id'];
     .round:not(:last-child) .match-wrap:nth-child(odd)::before { content: ""; position: absolute; right: -1.25rem; top: 50%; height: 50%; border-right: 2px solid #cbd5e1; }
     .round:not(:last-child) .match-wrap:nth-child(even)::before { content: ""; position: absolute; right: -1.25rem; bottom: 50%; height: 50%; border-right: 2px solid #cbd5e1; }
     .round:not(:first-child) .match::before { content: ""; position: absolute; left: -1.25rem; top: 50%; width: 1.25rem; border-top: 2px solid #cbd5e1; }
-    @page { size: A4 landscape; margin: 8mm; }
+    @page { size: A4 landscape; margin: 10mm; }
     @media print {
         #sidebar, .no-print, nav { display: none !important; }
         main { padding: 0 !important; overflow: visible !important; }
         .rounds { min-width: 0; }
+        #board { overflow: visible !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; break-inside: avoid; page-break-inside: avoid; }
+        #podium { break-inside: avoid; page-break-inside: avoid; }
     }
 </style>
 
@@ -123,6 +125,17 @@ $categoryId     = (int) $bracketState['category']['id'];
     let selected = null;   // vaga marcada para troca (índice na 1ª rodada)
 
     const $ = id => document.getElementById(id);
+    // Shrink the bracket to fit one A4 landscape page when printing (screen is untouched).
+    function fitPrint() {
+        const rounds = document.querySelector('#board .rounds');
+        if (!rounds) return;
+        rounds.style.zoom = 1;
+        const scale = Math.min(1, 1000 / rounds.scrollWidth, 560 / rounds.scrollHeight);
+        rounds.style.zoom = scale;
+    }
+    window.addEventListener('beforeprint', fitPrint);
+    window.addEventListener('afterprint', () => { const r = document.querySelector('#board .rounds'); if (r) r.style.zoom = ''; });
+
     const esc = t => { const d = document.createElement('div'); d.textContent = t ?? ''; return d.innerHTML; };
 
     const STATUS = {

@@ -16,9 +16,10 @@ $statusLabel = ['draft' => 'Rascunho', 'submitted' => 'Enviada', 'confirmed' => 
 $entryCount = array_sum(array_map(static fn ($r) => count($r['entries']), $registrations));
 $feeTotal   = array_sum(array_map(static fn ($r) => (float) ($r['fee_total'] ?? 0), $registrations));
 $hasFee     = $championship['fee_first_entry'] !== null;
+$allDojos   = !empty($allDojos) && Auth::isAdmin();
 ?>
 
-<?php if (!empty($dojoId)): ?>
+<?php if (!empty($dojoId) || $allDojos): ?>
 
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
@@ -42,7 +43,7 @@ $hasFee     = $championship['fee_first_entry'] !== null;
             <?php endif; ?>
         </div>
 
-        <a href="/fgkirs-admin/championships/<?= $championshipId ?>/summary/print<?= $dojoParam ?>" target="_blank"
+        <a href="/fgkirs-admin/championships/<?= $championshipId ?><?= $allDojos ? '/registrations/print' : '/summary/print' . $dojoParam ?>" target="_blank"
             class="inline-flex items-center justify-center border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold py-2.5 px-5 rounded-lg transition shrink-0">
             Imprimir ficha / PDF
         </a>
@@ -54,6 +55,7 @@ $hasFee     = $championship['fee_first_entry'] !== null;
                 <thead class="bg-slate-900 text-white">
                     <tr>
                         <th class="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider">Atleta</th>
+                        <?php if ($allDojos): ?><th class="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider">Dojo</th><?php endif; ?>
                         <th class="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider">Categorias</th>
                         <th class="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider">Situação</th>
                         <th class="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider">Ações</th>
@@ -61,7 +63,7 @@ $hasFee     = $championship['fee_first_entry'] !== null;
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     <?php if (empty($registrations)): ?>
-                        <tr><td colspan="4" class="px-5 py-10 text-center text-slate-500">Nenhum atleta inscrito ainda. Use a aba Atletas.</td></tr>
+                        <tr><td colspan="<?= $allDojos ? 5 : 4 ?>" class="px-5 py-10 text-center text-slate-500">Nenhum atleta inscrito ainda. Use a aba Atletas.</td></tr>
                     <?php endif; ?>
                     <?php foreach ($registrations as $r): ?>
                         <tr class="hover:bg-slate-50 align-top">
@@ -69,6 +71,7 @@ $hasFee     = $championship['fee_first_entry'] !== null;
                                 <p class="text-sm font-medium text-slate-900"><?= $e($r['full_name']) ?></p>
                                 <p class="text-xs text-slate-500"><?= (int) $r['age_at_event'] ?> anos · <?= $e(\Helpers\Format::measure($r['declared_weight'], $r['declared_height'] ?? null)) ?></p>
                             </td>
+                            <?php if ($allDojos): ?><td class="px-5 py-3 text-sm text-slate-700"><?= $e($r['dojo_name']) ?></td><?php endif; ?>
                             <td class="px-5 py-3 text-sm text-slate-700">
                                 <?php foreach ($r['entries'] as $entry): ?>
                                     <p><?= $e($entry['category_name']) ?><?= $entry['is_override'] ? ' <em class="text-xs text-amber-700">(exceção)</em>' : '' ?></p>
@@ -87,7 +90,8 @@ $hasFee     = $championship['fee_first_entry'] !== null;
                                     <form method="POST" action="/fgkirs-admin/championships/<?= $championshipId ?>/registrations/<?= (int) $r['id'] ?>/cancel" class="inline"
                                         onsubmit="return confirm('Cancelar a inscrição deste atleta?');">
                                         <?= Csrf::field() ?>
-                                        <?php if (Auth::isAdmin()): ?><input type="hidden" name="dojo_id" value="<?= (int) $dojoId ?>"><?php endif; ?>
+                                        <?php if ($allDojos): ?><input type="hidden" name="dojo_id" value="all">
+                                        <?php elseif (Auth::isAdmin()): ?><input type="hidden" name="dojo_id" value="<?= (int) $dojoId ?>"><?php endif; ?>
                                         <button type="submit" class="text-red-600 hover:text-red-700 text-sm font-semibold">Cancelar</button>
                                     </form>
                                 <?php endif; ?>
@@ -104,7 +108,7 @@ $hasFee     = $championship['fee_first_entry'] !== null;
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 divide-y divide-slate-100">
             <?php foreach ($teams as $team): ?>
                 <div class="px-5 py-3 text-sm">
-                    <p class="font-medium text-slate-900"><?= $e($team['category_name']) ?> <span class="text-xs text-slate-500">· <?= $statusLabel[$team['status']] ?? $e($team['status']) ?></span></p>
+                    <p class="font-medium text-slate-900"><?= $allDojos ? $e($team['dojo_name']) . ' · ' : '' ?><?= $e($team['category_name']) ?> <span class="text-xs text-slate-500">· <?= $statusLabel[$team['status']] ?? $e($team['status']) ?></span></p>
                     <p class="text-slate-600"><?= $e(implode(', ', array_column($team['members'], 'name'))) ?></p>
                 </div>
             <?php endforeach; ?>

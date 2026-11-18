@@ -13,13 +13,13 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES,
 <meta charset="utf-8">
 <title><?= $e($championship['title']) ?> – Chaves</title>
 <style>
-    @page { size: A4 landscape; margin: 8mm; }
+    @page { size: A4 landscape; margin: 10mm; }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #0f172a; background: #fff; }
     .toolbar { padding: 12px 16px; background: #0f172a; color: #fff; display: flex; gap: 12px; align-items: center; font-size: 14px; }
     .toolbar button { background: #b91c1c; color: #fff; border: 0; border-radius: 6px; padding: 8px 16px; font-weight: 600; cursor: pointer; }
-    .sheet { page-break-after: always; break-after: page; padding: 8px 12px; }
-    .sheet:last-child { page-break-after: auto; break-after: auto; }
+    .sheet { break-before: page; page-break-before: always; break-inside: avoid; page-break-inside: avoid; padding: 8px 12px; }
+    .sheet:first-of-type { break-before: auto; page-break-before: auto; }
     .sheet h2 { margin: 0; font-size: 18px; }
     .sheet p.sub { margin: 2px 0 8px; font-size: 11px; color: #64748b; }
     .fit { transform-origin: top left; width: max-content; }
@@ -89,7 +89,7 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES,
         document.querySelectorAll('.sheet').forEach(sheet => {
             const box = sheet.querySelector('.fit');
             box.style.transform = 'none';
-            const maxW = 1090, maxH = 700;
+            const maxW = 1010, maxH = 640; // A4 landscape minus 10mm margins
             const scale = Math.min(1, maxW / box.scrollWidth, maxH / box.scrollHeight);
             box.style.transform = 'scale(' + scale + ')';
             sheet.querySelector('.fit').parentElement.style.height = (box.scrollHeight * scale) + 'px';
